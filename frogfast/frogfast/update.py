@@ -1,12 +1,19 @@
-import frogfast.pythonc.main as thing
-import frogfast.c.main as thing2
+import frogfast.c.main as c_commands
+import frogfast.pythonc.main as python_commands
 
-def main():
+
+def main() -> None:
     while True:
-        command = input("frogfast> ").strip().split(" ")
-        code = thing.main(command)
+        raw = input("frogfast> ").strip()
+        if not raw:
+            continue
+
+        command = raw.split()
+        code = python_commands.main(command)
         print(f"code:{code}")
+
         if code == 45:
             break
+
         if code == 9:
-            thing2.main(command)
+            c_commands.main(command)
