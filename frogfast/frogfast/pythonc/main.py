@@ -2,48 +2,9 @@ import os
 import shutil
 from typing import Optional
 
+from ..cli_common import EXIT_MESSAGE, UNKNOWN_COMMAND_MESSAGE, parse_config, read_build_config
+
 from . import nuitkac
-
-
-def _read_build_config(file_path: str) -> Optional[str]:
-    """Read and echo build config file contents."""
-    try:
-        with open(file_path, "r") as config_file:
-            build_config = config_file.read()
-            print(f"Build configuration:\n{build_config}")
-            return build_config
-    except FileNotFoundError:
-        print(f"Error: The file {file_path} does not exist.")
-        return None
-
-
-def _parse_config(build_config: str, project_dir: str) -> tuple[str, Optional[str], Optional[str], Optional[str], Optional[str]]:
-    """Parse key=value config lines while preserving current CLI output."""
-    build_tool = "nuitka"
-    output_name = None
-    start = None
-    icon = None
-    lang = None
-
-    for line in build_config.splitlines():
-        parts = line.split("=")
-        if len(parts) == 2:
-            key, value = (part.strip() for part in parts)
-            print(f"Key: {key}, Value: {value}")
-            if key == "compiler":
-                build_tool = value
-            elif key == "exe_name":
-                output_name = f"{value.replace(' ', '_')}.exe"
-            elif key == "entry":
-                start = os.path.join(project_dir, value)
-            elif key == "icon":
-                icon = os.path.join(project_dir, value)
-            elif key == "lang":
-                lang = value
-        else:
-            print(f"Invalid line format: {line}")
-
-    return build_tool, output_name, start, icon, lang
 
 
 def _handle_build(command: list[str], project_dir: str) -> Optional[int]:
@@ -55,11 +16,16 @@ def _handle_build(command: list[str], project_dir: str) -> Optional[int]:
 
     config_path = os.path.join(project_dir, command[1])
     print(f"Using build configuration from: {config_path}")
-    build_config = _read_build_config(config_path)
+    build_config = read_build_config(config_path)
     if build_config is None:
         return None
 
-    build_tool, output_name, start, icon, lang = _parse_config(build_config, project_dir)
+    build_tool, output_name, start, icon, lang = parse_config(
+        build_config,
+        project_dir,
+        include_lang=True,
+        normalize_slashes=False,
+    )
 
     if lang == "python":
         print(f"Using build tool: {build_tool}")
@@ -118,7 +84,7 @@ def _handle_clean(project_dir: str) -> None:
 
 def main(command: list[str]) -> Optional[int]:
     if not command:
-        print("Unknown command. Try 'frogfast build [config.frogbulid]' or 'exit' or 'init'.")
+        print(UNKNOWN_COMMAND_MESSAGE)
         return None
 
     project_dir = os.getcwd()
@@ -130,9 +96,9 @@ def main(command: list[str]) -> Optional[int]:
     elif command[0] == "init":
         _handle_init(command)
     elif command[0] == "exit":
-        print("Goodbye from FrogFast! ")
+        print(EXIT_MESSAGE)
         return 45
     else:
-        print("Unknown command. Try 'frogfast build [config.frogbulid]' or 'exit' or 'init'.")
+        print(UNKNOWN_COMMAND_MESSAGE)
 
     return None
